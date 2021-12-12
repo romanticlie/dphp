@@ -1,0 +1,130 @@
+version: "3"
+
+services:
+  nginx:
+    image: "dphp/nginx"
+    build:
+      context: "${NGINX_DIR}/build"
+    container_name: nginx  
+    ports: 
+      - "${NGINX_HTTP_PORT}:80"
+      - "${NGINX_HTTPS_PORT}:443"
+    expose:
+      - "80"
+      - "443"  
+    volumes:
+      - "${NGINX_DIR}/conf/nginx.conf:/etc/nginx/nginx.conf:rw"   
+      - "${NGINX_DIR}/conf/conf.d:/etc/nginx/conf.d/:rw"
+      - "${NGINX_DIR}/logs:/var/log/nginx/:rw"
+    environment:
+      TZ: "$TZ"
+    restart: always
+    networks:
+      - default
+
+  redis:
+    image: "dphp/redis"
+    build:
+      context: "${REDIS_DIR}/build"
+    container_name: redis
+    ports:
+      - "${REDIS_PORT}:6379"
+    expose:
+      - "6379"
+    volumes:
+      - "${REDIS_DIR}/conf/redis.conf:/usr/local/etc/redis/redis.conf:rw"
+      - "${REDIS_DIR}/data:/data/:rw"
+    environment:
+      TZ: "$TZ"
+    restart: always
+    networks:
+      - default
+  mysql:
+    image: "dphp/mysql"
+    build:
+      context: "${MYSQL_DIR}/build"  
+    container_name: mysql
+    ports:
+      - "${MYSQL_PORT}:3306"
+    expose:
+      - "3306"
+    volumes:
+      - "${MYSQL_DIR}/conf/my.cnf:/etc/mysql/conf.d/mysql.cnf:rw"  
+      - "${MYSQL_DIR}/data:/var/lib/mysql/:rw"
+      - "${MYSQL_DIR}/logs:/var/log/mysql/:rw"
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      TZ: "$TZ"
+    restart: always
+    networks:
+      - default
+  mongodb:
+    image: "dphp/mongodb"
+    build:
+      context: "${MONGODB_DIR}/build"
+    container_name: mongodb
+    ports:
+      - "${MONGODB_PORT}:27017"
+    expose:
+      - "27017"
+    volumes:
+      - "${MONGODB_DIR}/conf/mongod.conf:/etc/mongo/mongod.conf:rw"  
+      - "${MONGODB_DIR}/data:/data/db:rw"
+      - "${MONGODB_DIR}/logs:/var/log/mongodb:rw"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "${MONGODB_USERNAME}"
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGODB_PASSWORD}"
+      TZ: "$TZ"
+    restart: always
+    networks:
+      - default  
+    
+
+  php:
+    image: "dphp/php"
+    build:
+      context: "${PHP_DIR}/build"
+      args:
+        CONTAINER_PACKAGE_URL: ${CONTAINER_PACKAGE_URL}
+        TZ: "$TZ"
+    container_name: php
+    expose:
+      - "9000"
+    volumes:
+      - "${PHP_DIR}/conf/php.ini:/usr/local/etc/php/php.ini:rw"
+      - "${PHP_DIR}/conf/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf:rw"
+      - "${PHP_DIR}/logs:/var/log/php:rw"
+      - "${SOURCE_DIR}:/www:rw"
+    restart: always
+    networks:
+      - default
+      
+  supervisor:
+    image: "dphp/supervisor"
+    build:
+      context: "${SUPERVISOR_DIR}/build"
+      args:
+        CONTAINER_PACKAGE_URL: ${CONTAINER_PACKAGE_URL}
+        TZ: "$TZ"
+    container_name: supervisor
+    ports:
+      - "${SUPERVISOR_PORT}:9001"
+    expose:
+      - "9001"  
+    volumes:
+      - "${PHP_DIR}/conf/php.ini:/usr/local/etc/php/php.ini:rw"
+      - "${PHP_DIR}/conf/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf:rw"
+      - "${PHP_DIR}/logs:/var/log/php:rw"
+      - "${SOURCE_DIR}:/www:rw"
+      - "${SUPERVISOR_DIR}/logs:/var/log/supervisor/:rw"
+      - "${SUPERVISOR_DIR}/conf/conf.d:/etc/supervisor/conf.d/:rw"
+      - "${SUPERVISOR_DIR}/conf/supervisord.conf:/etc/supervisor/supervisord.conf:rw"
+    restart: always
+    cap_add:
+      - SYS_PTRACE
+    networks:
+      - default
+
+networks:
+  default:
+
