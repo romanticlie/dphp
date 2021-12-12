@@ -4,17 +4,3 @@
 */.DS_Store
 /.idea
 /.vscode
-
-/services/mongodb/data
-/services/mongodb/logs
-
-/services/mysql/data
-/services/mysql/logs
-
-/services/nginx/logs
-
-/services/php/logs
-
-/services/redis/data
-
-/services/supervisor/logs
